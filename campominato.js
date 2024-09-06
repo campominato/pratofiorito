@@ -1,3 +1,6 @@
+
+
+
 var DIM = 24;
 var NUM_BOMBE = 88;
 var griglia = [];
@@ -17,7 +20,6 @@ function setup() {
   contaBombeVicine();
   bombeRimaste = NUM_BOMBE;
 
-  // Eventi per i pulsanti "Scopri" e "Bandiera"
   document.getElementById('discoverButton').addEventListener('click', () => {
     currentAction = "discover";
     document.getElementById('discoverButton').classList.add('active');
@@ -29,13 +31,28 @@ function setup() {
     document.getElementById('discoverButton').classList.remove('active');
   });
 
-  // Disabilita il comportamento predefinito del menu contestuale su canvas
-  document.getElementById('gameCanvas').addEventListener('contextmenu', function (e) {
-    e.preventDefault(); 
-  });
+  // Supporto per dispositivi mobili: tocco per piazzare la bandiera
+  document.getElementById('gameCanvas').addEventListener('touchstart', handleTouch);
 
   // Imposta il pulsante "Scopri" come predefinito attivo
   document.getElementById('discoverButton').classList.add('active');
+}
+
+function handleTouch(event) {
+  event.preventDefault();
+  var touch = event.touches[0]; // Ottieni il primo tocco
+  var x = int((touch.clientX - offsetX) / DIM_CELLA);
+  var y = int((touch.clientY - offsetY) / DIM_CELLA);
+
+  if (currentAction == "flag") {
+    if (!bandiera[x][y] && bombeRimaste > 0) {
+      bandiera[x][y] = true;
+      bombeRimaste--;
+    } else if (bandiera[x][y]) {
+      bandiera[x][y] = false;
+      bombeRimaste++;
+    }
+  }
 }
 
 function draw() {
@@ -63,30 +80,34 @@ function opacizzaGriglia() {
 }
 
 function mostraPopup() {
-  var popupWidth = windowWidth * 0.4;
-  var popupHeight = windowHeight * 0.15;
+  var popupWidth = windowWidth * 0.4; // 80% della larghezza dello schermo
+  var popupHeight = windowHeight * 0.15; // 40% dell'altezza dello schermo
   var popupX = (windowWidth - popupWidth) / 2;
   var popupY = (windowHeight - popupHeight) / 2;
 
+  // Disegna il rettangolo nero
   fill(0);
-  rect(popupX, popupY, popupWidth, popupHeight, 20);
+  rect(popupX, popupY, popupWidth, popupHeight, 20); // Angoli arrotondati
 
+  // Testo centrale ("Hai perso!" o "Hai vinto!")
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(windowWidth * 0.05);
+  textSize(windowWidth * 0.05); // 5% della larghezza dello schermo per il testo
   var messaggio = gameOver ? "Hai perso!" : "Hai vinto!";
   text(messaggio, popupX + popupWidth / 2, popupY + popupHeight / 3);
 
-  var buttonWidth = popupWidth * 0.4;
-  var buttonHeight = popupHeight * 0.2;
+  // Dimensioni e posizione del pulsante "Rigioca"
+  var buttonWidth = popupWidth * 0.4; // 30% della larghezza del popup
+  var buttonHeight = popupHeight * 0.2; // 15% dell'altezza del popup
   var buttonX = popupX + (popupWidth - buttonWidth) / 2;
-  var buttonY = popupY + popupHeight - buttonHeight - windowHeight * 0.02;
+  var buttonY = popupY + popupHeight - buttonHeight - windowHeight * 0.02; // Margine inferiore di 2% dell'altezza dello schermo
 
   fill(178, 34, 34);
-  rect(buttonX, buttonY, buttonWidth, buttonHeight, 10);
+  rect(buttonX, buttonY, buttonWidth, buttonHeight, 10); // Angoli arrotondati
 
+  // Testo del pulsante "Rigioca"
   fill(255);
-  textSize(windowWidth * 0.04);
+  textSize(windowWidth * 0.04); // 4% della larghezza dello schermo per il testo del pulsante
   text("Rigioca", buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
 }
 
@@ -97,16 +118,17 @@ function mousePressed() {
   var y = int((mouseY - offsetY) / DIM_CELLA);
 
   if (gameOver || vittoria) {
-    var popupWidth = windowWidth * 0.4;
-    var popupHeight = windowHeight * 0.15;
+    var popupWidth = windowWidth * 0.4; // 40% della larghezza dello schermo
+    var popupHeight = windowHeight * 0.15; // 15% dell'altezza dello schermo
     var popupX = (windowWidth - popupWidth) / 2;
     var popupY = (windowHeight - popupHeight) / 2;
 
-    var buttonWidth = popupWidth * 0.4;
-    var buttonHeight = popupHeight * 0.2;
+    var buttonWidth = popupWidth * 0.4; // 40% della larghezza del popup
+    var buttonHeight = popupHeight * 0.2; // 20% dell'altezza del popup
     var buttonX = popupX + (popupWidth - buttonWidth) / 2;
-    var buttonY = popupY + popupHeight - buttonHeight - windowHeight * 0.02;
+    var buttonY = popupY + popupHeight - buttonHeight - windowHeight * 0.02; // Margine inferiore di 2%
 
+    // Verifica che il clic sia all'interno delle coordinate del pulsante "Rigioca"
     if (mouseX > buttonX && mouseX < buttonX + buttonWidth &&
         mouseY > buttonY && mouseY < buttonY + buttonHeight) {
       riavviaGioco();
@@ -115,36 +137,19 @@ function mousePressed() {
     if (currentAction == "discover") {
       scopriCella(x, y);
     } else if (currentAction == "flag") {
-      piazzaBandiera(x, y);
+      if (!bandiera[x][y] && bombeRimaste > 0) {
+        bandiera[x][y] = true;
+        bombeRimaste--;
+      } else if (bandiera[x][y]) {
+        bandiera[x][y] = false;
+        bombeRimaste++;
+      }
     }
   }
 }
 
-function touchStarted() {
-  var offsetX = (width - DIM * DIM_CELLA) / 2;
-  var offsetY = (height - DIM * DIM_CELLA) / 2;
-  var x = int((touchX - offsetX) / DIM_CELLA);
-  var y = int((touchY - offsetY) / DIM_CELLA);
 
-  if (x >= 0 && x < DIM && y >= 0 && y < DIM) {
-    if (currentAction == "discover") {
-      scopriCella(x, y);
-    } else if (currentAction == "flag") {
-      piazzaBandiera(x, y);
-    }
-  }
-  return false; // Previene il comportamento predefinito
-}
 
-function piazzaBandiera(x, y) {
-  if (!bandiera[x][y] && bombeRimaste > 0) {
-    bandiera[x][y] = true;
-    bombeRimaste--;
-  } else if (bandiera[x][y]) {
-    bandiera[x][y] = false;
-    bombeRimaste++;
-  }
-}
 
 function riavviaGioco() {
   gameFinished = false;
@@ -186,30 +191,41 @@ function inizializzaGriglia() {
       bandiera[i][j] = false;
     }
   }
-  // Posiziona bombe
-  for (var n = 0; n < NUM_BOMBE; n++) {
-    var x, y;
-    do {
-      x = int(random(DIM));
-      y = int(random(DIM));
-    } while (griglia[x][y] == -1);
-    griglia[x][y] = -1;
+  var moduli = [
+    [[1, 1], [4, 1], [4, 2], [5, 1]],
+    [[2, 1], [3, 1], [3, 2], [6, 1]],
+    [[1, 2], [4, 2], [4, 1], [5, 2]],
+    [[2, 2], [3, 1], [3, 2], [6, 2]]
+  ];
+  for (var i = 0; i < DIM; i += 6) {
+    for (var j = 0; j < DIM; j += 2) {
+      var moduloScelto = int(random(moduli.length));
+      for (var k = 0; k < moduli[moduloScelto].length; k++) {
+        var x = i + moduli[moduloScelto][k][0] - 1;
+        var y = j + moduli[moduloScelto][k][1] - 1;
+        if (x < DIM && y < DIM) {
+          griglia[x][y] = -1;
+        }
+      }
+    }
   }
 }
 
 function contaBombeVicine() {
   for (var x = 0; x < DIM; x++) {
     for (var y = 0; y < DIM; y++) {
-      if (griglia[x][y] == -1) continue;
-      var count = 0;
+      if (griglia[x][y] == -1) {
+        continue;
+      }
+      var conta = 0;
       for (var i = -1; i <= 1; i++) {
         for (var j = -1; j <= 1; j++) {
-          if (x + i >= 0 && x + i < DIM && y + j >= 0 && y + j < DIM) {
-            if (griglia[x + i][y + j] == -1) count++;
+          if (x + i >= 0 && x + i < DIM && y + j >= 0 && y + j < DIM && griglia[x + i][y + j] == -1) {
+            conta++;
           }
         }
       }
-      griglia[x][y] = count;
+      griglia[x][y] = conta;
     }
   }
 }
@@ -217,45 +233,57 @@ function contaBombeVicine() {
 function mostraGriglia() {
   var offsetX = (width - DIM * DIM_CELLA) / 2;
   var offsetY = (height - DIM * DIM_CELLA) / 2;
-
   for (var x = 0; x < DIM; x++) {
     for (var y = 0; y < DIM; y++) {
-      var cellX = x * DIM_CELLA + offsetX;
-      var cellY = y * DIM_CELLA + offsetY;
-      stroke(255);
-      if (scoperto[x][y]) {
-        fill(150);
-        rect(cellX, cellY, DIM_CELLA, DIM_CELLA);
-        if (griglia[x][y] > 0) {
-          fill(0);
-          textAlign(CENTER, CENTER);
-          textSize(DIM_CELLA * 0.6);
-          text(griglia[x][y], cellX + DIM_CELLA / 2, cellY + DIM_CELLA / 2);
-        }
+      var cellX = offsetX + x * DIM_CELLA;
+      var cellY = offsetY + y * DIM_CELLA;
+      if (scoperto[x][y] || gameOver && griglia[x][y] == -1) {
+        fill(200);
       } else {
         fill(100);
-        rect(cellX, cellY, DIM_CELLA, DIM_CELLA);
-        if (bandiera[x][y]) {
-          fill(255, 0, 0);
-          textAlign(CENTER, CENTER);
-          textSize(DIM_CELLA * 0.6);
-          text('F', cellX + DIM_CELLA / 2, cellY + DIM_CELLA / 2);
-        }
+      }
+      rect(cellX, cellY, DIM_CELLA, DIM_CELLA);
+      if (scoperto[x][y] && griglia[x][y] > 0) {
+        disegnaNumero(x, y, griglia[x][y], cellX, cellY);
+      }
+      if (bandiera[x][y]) {
+        fill(255, 0, 0);
+        triangle(cellX + 5, cellY + 5, cellX + DIM_CELLA / 2, cellY + 25, cellX + 25, cellY + 5);
+      }
+      if (gameOver && griglia[x][y] == -1) {
+        fill(0);
+        ellipse(cellX + DIM_CELLA / 2, cellY + DIM_CELLA / 2, DIM_CELLA / 2, DIM_CELLA / 2);
       }
     }
   }
 }
 
+function disegnaNumero(x, y, numero, cellX, cellY) {
+  switch (numero) {
+    case 1: fill(0, 0, 255); break;
+    case 2: fill(0, 255, 0); break;
+    case 3: fill(255, 0, 0); break;
+    case 4: fill(255, 255, 0); break;
+    case 5: fill(128, 0, 128); break;
+    case 6: fill(255, 165, 0); break;
+    case 7: fill(165, 42, 42); break;
+    case 8: fill(0); break;
+  }
+  textAlign(CENTER, CENTER);
+  textSize(15);
+  text(numero.toString(), cellX + DIM_CELLA / 2, cellY + DIM_CELLA / 2);
+}
+
 function controllaVittoria() {
-  var celleNonScoperte = 0;
+  var scoperte = 0;
   for (var x = 0; x < DIM; x++) {
     for (var y = 0; y < DIM; y++) {
-      if (!scoperto[x][y] && griglia[x][y] != -1) {
-        celleNonScoperte++;
+      if (scoperto[x][y] || (bandiera[x][y] && griglia[x][y] == -1)) {
+        scoperte++;
       }
     }
   }
-  if (celleNonScoperte == 0) {
+  if (scoperte == DIM * DIM) {
     vittoria = true;
   }
 }
