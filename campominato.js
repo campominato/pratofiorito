@@ -19,7 +19,6 @@ function setup() {
   contaBombeVicine();
   bombeRimaste = NUM_BOMBE;
 
-  // Aggiungi event listener per i pulsanti
   document.getElementById('discoverButton').addEventListener('click', () => {
     currentAction = "discover";
     document.getElementById('discoverButton').classList.add('active');
@@ -31,8 +30,28 @@ function setup() {
     document.getElementById('discoverButton').classList.remove('active');
   });
 
+  // Supporto per dispositivi mobili: tocco per piazzare la bandiera
+  document.getElementById('gameCanvas').addEventListener('touchstart', handleTouch);
+
   // Imposta il pulsante "Scopri" come predefinito attivo
   document.getElementById('discoverButton').classList.add('active');
+}
+
+function handleTouch(event) {
+  event.preventDefault();
+  var touch = event.touches[0]; // Ottieni il primo tocco
+  var x = int((touch.clientX - offsetX) / DIM_CELLA);
+  var y = int((touch.clientY - offsetY) / DIM_CELLA);
+
+  if (currentAction == "flag") {
+    if (!bandiera[x][y] && bombeRimaste > 0) {
+      bandiera[x][y] = true;
+      bombeRimaste--;
+    } else if (bandiera[x][y]) {
+      bandiera[x][y] = false;
+      bombeRimaste++;
+    }
+  }
 }
 
 function draw() {
